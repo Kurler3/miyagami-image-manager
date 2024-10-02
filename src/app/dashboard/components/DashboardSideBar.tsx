@@ -6,6 +6,7 @@ import DashboardSideBarOption from "./DashboardSideBarOption"
 import { Separator } from "../../../components/ui/separator";
 import { usePathname } from "next/navigation";
 import { Button } from "../../../components/ui/button";
+import { LogIn } from 'lucide-react';
 
 type IProps = {
     isLoggedIn: boolean;
@@ -70,12 +71,17 @@ export default function DashboardSideBar({
                         ) : (
                             <div className="flex justify-center items-center gap-2 flex-col w-full">
 
-                                <Button className="w-full text-white bg-blue-400 hover:bg-blue-500">
-                                    Login
+                                <Button className="w-full text-white bg-blue-400 hover:bg-blue-500" asChild>
+                                    <Link href='/login'>
+                                        Login
+                                    </Link>
+                                    
                                 </Button>
 
-                                <Button className="w-full bg-blue-700 hover:bg-blue-800 text-white">
-                                    Sign up
+                                <Button className="w-full bg-blue-700 hover:bg-blue-800 text-white" asChild>
+                                    <Link href='/sign-up'>
+                                    <LogIn className="mr-2 h-4 w-4"/> Sign up
+                                    </Link>
                                 </Button>
 
                             </div>

@@ -7,8 +7,6 @@ export async function handleCheckAuthorizationByRoute(
 
     const isLoggedIn = !!(await getSession())
 
-    console.log(isLoggedIn, pathname)
-
     // If need auth => redirect to /login
     if(NEED_AUTH_ROUTES.includes(pathname) && !isLoggedIn) {
         return {
