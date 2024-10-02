@@ -5,6 +5,7 @@ import { DASHBOARD_SIDE_BAR_OPTIONS, DASHBOARD_SIDEBAR_ID } from "../../../utils
 import DashboardSideBarOption from "./DashboardSideBarOption"
 import { Separator } from "../../../components/ui/separator";
 import { usePathname } from "next/navigation";
+import { Button } from "../../../components/ui/button";
 
 type IProps = {
     isLoggedIn: boolean;
@@ -20,16 +21,16 @@ export default function DashboardSideBar({
         <>
 
             <input id={DASHBOARD_SIDEBAR_ID} type="checkbox" className="drawer-toggle" />
-            
+
             <div className="drawer-side">
 
                 <label htmlFor={DASHBOARD_SIDEBAR_ID} aria-label="close sidebar" className="drawer-overlay"></label>
 
                 {/* SIDEBAR CONTENT */}
                 <div
-                    className='flex flex-col justify-between items-start h-screen bg-base-200 border-r border-r-slate-600'
+                    className='flex flex-col justify-between items-start h-screen bg-base-200 border-r border-r-slate-600 p-4'
                 >
-                    <ul className="menu text-base-content h-full w-full p-4 gap-4">
+                    <ul className="menu text-base-content h-full w-full gap-4">
 
                         {/* APP TITLE */}
                         <Link
@@ -46,7 +47,7 @@ export default function DashboardSideBar({
                         {
                             DASHBOARD_SIDE_BAR_OPTIONS.map((option) => {
 
-                                if(option.protected && !isLoggedIn) return null;
+                                if (option.protected && !isLoggedIn) return null;
 
                                 return (
                                     <DashboardSideBarOption
@@ -60,11 +61,31 @@ export default function DashboardSideBar({
 
                     </ul>
 
-                    {/* LOGOUT BUTTON */}
-                    
+                    {/* LOGOUT/LOGIN BUTTON */}
+                    {
+                        isLoggedIn ? (
+                            <div>
+                                Hi
+                            </div>
+                        ) : (
+                            <div className="flex justify-center items-center gap-2 flex-col w-full">
+
+                                <Button className="w-full text-white bg-blue-400 hover:bg-blue-500">
+                                    Login
+                                </Button>
+
+                                <Button className="w-full bg-blue-700 hover:bg-blue-800 text-white">
+                                    Sign up
+                                </Button>
+
+                            </div>
+
+                        )
+                    }
+
 
                 </div>
-                    
+
 
             </div>
 
