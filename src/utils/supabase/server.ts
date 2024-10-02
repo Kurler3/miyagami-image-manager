@@ -28,7 +28,6 @@ export function createClient() {
     )
 }
 
-
 // Create a function to get the current session
 export async function getSession() {
     const supabase = createClient()
