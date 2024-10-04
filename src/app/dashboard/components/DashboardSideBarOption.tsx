@@ -17,7 +17,7 @@ export default function DashboardSideBarOption({
 
     return (
         <Button
-            className={`${isActive ? "text-white" : ""} hover:bg-primary`}
+            className={`${isActive ? "text-white" : ""} hover:bg-primary hover:text-white transition`}
             asChild
             variant={!isActive ? 'ghost' : 'default'}
         >
