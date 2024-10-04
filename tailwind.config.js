@@ -9,6 +9,6 @@ module.exports = {
   },
   plugins: [daisyui],
   daisyui: {
-    themes: ["night"]
+    themes: ["dark"]
   }
 }

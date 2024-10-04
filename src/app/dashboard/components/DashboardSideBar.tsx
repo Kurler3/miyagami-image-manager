@@ -71,16 +71,16 @@ export default function DashboardSideBar({
                         ) : (
                             <div className="flex justify-center items-center gap-2 flex-col w-full">
 
-                                <Button className="w-full text-white bg-blue-400 hover:bg-blue-500" asChild>
+                                <Button className="w-full font-bold bg-secondary text-white" asChild>
                                     <Link href='/login'>
                                         Login
                                     </Link>
                                     
                                 </Button>
 
-                                <Button className="w-full bg-blue-700 hover:bg-blue-800 text-white" asChild>
+                                <Button className="w-full text-white font-bold text-base" asChild>
                                     <Link href='/sign-up'>
-                                    <LogIn className="mr-2 h-4 w-4"/> Sign up
+                                    <LogIn className="mr-2 h-6 w-6"/> Sign up
                                     </Link>
                                 </Button>
 

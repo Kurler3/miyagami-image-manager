@@ -22,7 +22,7 @@ export default function DashboardSideBarOption({
             variant={!isActive ? 'ghost' : 'default'}
         >
             <Link href={option.href} className="flex justify-start items-center w-full font-bold">
-                <option.icon className="mr-2 h-4 w-4" /> <div className="flex-1 ml-2">{option.title}</div>
+                <option.icon className="mr-2 h-4 w-4" /> <div className="flex-1 ml-2 font-bold">{option.title}</div>
             </Link>
         </Button>
     )
