@@ -1,9 +1,12 @@
+import AuthComponent from "../../components/auth/AuthComponent";
 
-
+// Server-side component
 export default function LoginPage() {
     return (
-        <div>
-          Hello
-        </div>
-      )
+        <AuthComponent 
+          buttonTitle="Login with Google"
+          title="Login"
+          message="Please login to continue"
+        />
+    );
 }

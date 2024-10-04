@@ -28,3 +28,17 @@ export async function loginWithGoogle() {
     }
 
 }
+
+export async function signout() {
+
+    const supabase = createClient();
+
+    const { error } = await supabase.auth.signOut()
+
+    if(error) {
+        console.error(error)
+        return redirect('/error');
+    }
+
+    return redirect('/auth/sign-out/successful');
+}

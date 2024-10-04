@@ -7,6 +7,7 @@ import { Separator } from "../../../components/ui/separator";
 import { usePathname } from "next/navigation";
 import { Button } from "../../../components/ui/button";
 import { LogIn } from 'lucide-react';
+import LogoutButton from "../../../components/auth/LogoutButton";
 
 type IProps = {
     isLoggedIn: boolean;
@@ -65,22 +66,22 @@ export default function DashboardSideBar({
                     {/* LOGOUT/LOGIN BUTTON */}
                     {
                         isLoggedIn ? (
-                            <div>
-                                Hi
-                            </div>
+                            <LogoutButton />
                         ) : (
                             <div className="flex justify-center items-center gap-2 flex-col w-full">
 
-                                <Button className="w-full font-bold bg-secondary text-white" asChild>
+                                <Button 
+                                    className="w-full font-bold bg-secondary hover:bg-secondary/80 text-white" 
+                                    asChild
+                                >
                                     <Link href='/login'>
                                         Login
                                     </Link>
-                                    
                                 </Button>
 
                                 <Button className="w-full text-white font-bold text-base" asChild>
                                     <Link href='/sign-up'>
-                                    <LogIn className="mr-2 h-6 w-6"/> Sign up
+                                        <LogIn className="mr-2 h-6 w-6" /> Sign up
                                     </Link>
                                 </Button>
 
