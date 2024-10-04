@@ -19,7 +19,7 @@ export async function loginWithGoogle() {
     if(error) {
         console.error(error)
         //TODO Should also show a message.
-        return redirect('/error');
+        return redirect('/error?msg=Something went wrong while trying to login :( please try again');
     }
 
     // If there's a callback url from the sign in

@@ -41,6 +41,18 @@ export async function getSession() {
     return session
 }
 
+export async function getCurrentUser() {
+
+  const supabase = createClient();
+  const { data, error } = await supabase.auth.getUser() 
+
+  if(error) {
+    console.error('Error fetching user:', error)
+    return null
+  }
+
+  return data.user;
+}
 
 // Used to refresh expired auth tokens and to store them.
 export async function updateSession(request: NextRequest) {

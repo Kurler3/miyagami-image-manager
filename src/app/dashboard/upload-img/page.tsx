@@ -1,5 +1,5 @@
 // app/dashboard/upload/page.tsx
-import { createClient, getSession } from "@/utils/supabase/server"; // your server-side supabase client
+import { createClient, getCurrentUser } from "@/utils/supabase/server"; // your server-side supabase client
 import { revalidatePath } from "next/cache";
 import { Input } from "@/components/ui/input"; // Using Shadcn UI components
 import { Textarea } from "@/components/ui/textarea";
@@ -8,7 +8,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import prisma from "../../../utils/prisma/prisma";
+import { v4 as uuid } from 'uuid';
 
 // Form validation schema
 const imageSchema = z.object({
@@ -19,12 +21,13 @@ const imageSchema = z.object({
 
 // Upload function to handle form submission
 async function uploadImage(formData: FormData) {
+
     'use server'
 
     const supabase = createClient();
-    const session = await getSession();
-    
-    if(!session) {
+    const user = await getCurrentUser();
+
+    if (!user) {
         return redirect('/login');
     }
 
@@ -34,6 +37,8 @@ async function uploadImage(formData: FormData) {
     const publicImage = formData.get("public") === "on" ? true : false;
     const imageFile = formData.get("image") as File;
 
+    console.log('image file: ', imageFile);
+
     // Validate the form data
     const parsedData = imageSchema.safeParse({ title, description, public: publicImage });
 
@@ -42,14 +47,21 @@ async function uploadImage(formData: FormData) {
         return redirect('/error?msg=Invalid form data');
     }
 
-    // Upload the image to Supabase storage
+     ///////////////////////////////////////////////////////////////////////
+    // Upload the image to Supabase storage ///////////////////////////////
+    ///////////////////////////////////////////////////////////////////////
+
+    const imageUUID = uuid();
+
     const { data: storageData, error: storageError } = await supabase.storage
         .from("images")
-        .upload(`public/${imageFile.name}`, 
-            imageFile,
-            {
-                metadata: {
-                    user_id: session.user.id, 
+        .upload(
+            imageUUID!, // Same id as the one in the db!
+            imageFile, // The actual image
+            {   
+                // Some metadata
+                metadata: { 
+                    user_id: user.id,
                     public: publicImage,
                 },
             }
@@ -62,26 +74,51 @@ async function uploadImage(formData: FormData) {
 
     const imageUrl = supabase.storage.from("images").getPublicUrl(storageData.path).data.publicUrl;
 
-    console.log(imageUrl)
+    console.log("Metadata: ", await supabase.storage.from("images").info(storageData.path))
 
-    //TODO: Switch for prisma.
-    // Save the metadata to Supabase database
-    // const { error: insertError } = await supabase
-    //     .from("images")
-    //     .insert({
-    //         title,
-    //         description,
-    //         public: publicImage,
-    //         image: imageUrl,
-    //     });
+    ///////////////////////////////////////////////////////////////////////
+    // Use a transaction for creating the image on the db /////////////////
+    ///////////////////////////////////////////////////////////////////////
 
-    // if (insertError) {
-    //     console.error('Insert error: ', insertError);
-    //     return redirect('/error?msg=Error saving metadata');
-    // }
+    try {
 
-    revalidatePath("/dashboard/public");
-    redirect("/dashboard/public");
+        await prisma.$transaction(async (prisma) => {
+
+            // Create the image entry in the database
+            await prisma.image.create({
+                data: {
+                    id: imageUUID,
+                    title,
+                    description,
+                    public: publicImage,
+                    imageUrl: imageUrl,
+                    userId: user.id,
+                },
+            });
+
+        });
+
+    } catch (dbError) {
+        console.error('Error saving image in database: ', dbError);
+
+        // Rollback: Delete the image from storage if the DB transaction fails
+        const { error: deleteError } = await supabase.storage
+            .from("images")
+            .remove([storageData.path]);
+
+        if (deleteError) {
+            console.error('Error deleting image from storage during rollback: ', deleteError);
+        }
+
+        return redirect('/error?msg=Error saving image');
+    }
+   
+    console.log("New image url: ", imageUrl)
+
+    // Select path to revalidate and redirect to.
+    const pathToRedirectTo = `/dashboard/${publicImage ? 'public' : 'private'}`;
+    revalidatePath(pathToRedirectTo);
+    redirect(pathToRedirectTo);
 }
 
 // Image Upload Form Component (Server-side)
@@ -90,7 +127,7 @@ export default async function UploadImagePage() {
     async function handleSubmit(formData: FormData) {
         'use server'
         await uploadImage(formData);
-      }
+    }
 
     return (
         <div className="flex flex-col items-center justify-center min-h-screen p-8 bg-base-200 w-full">

@@ -25,6 +25,8 @@ model Image {
 
   User       User     @relation(fields: [userId], references: [id])
   Favorite   Favorite[]
+
+  @@map("image")
 }
 
 model Favorite {
@@ -35,6 +37,8 @@ model Favorite {
 
   User      User     @relation(fields: [userId], references: [id])
   Image     Image    @relation(fields: [imageId], references: [id])
+
+   @@map("favorite")
 }
 
 model User {
@@ -42,4 +46,6 @@ model User {
   email    String    @unique
   favorites Favorite[]
   images    Image[]
+
+   @@map("user")
 }
