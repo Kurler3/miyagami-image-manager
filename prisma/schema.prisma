@@ -19,14 +19,14 @@ model Image {
   description String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
-  imageUrl   String
+  imageUrl   String? // No image url in case that the image is private, in which case we just create a signed url on the fly.
   public     Boolean  @default(false)
   userId     String
 
   User       User     @relation(fields: [userId], references: [id])
   Favorite   Favorite[]
 
-  @@map("image")
+  @@map("images")
 }
 
 model Favorite {
@@ -38,7 +38,7 @@ model Favorite {
   User      User     @relation(fields: [userId], references: [id])
   Image     Image    @relation(fields: [imageId], references: [id])
 
-   @@map("favorite")
+   @@map("favorites")
 }
 
 model User {
@@ -47,5 +47,5 @@ model User {
   favorites Favorite[]
   images    Image[]
 
-   @@map("user")
+   @@map("users")
 }

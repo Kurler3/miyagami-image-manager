@@ -37,8 +37,6 @@ async function uploadImage(formData: FormData) {
     const publicImage = formData.get("public") === "on" ? true : false;
     const imageFile = formData.get("image") as File;
 
-    console.log('image file: ', imageFile);
-
     // Validate the form data
     const parsedData = imageSchema.safeParse({ title, description, public: publicImage });
 
@@ -47,20 +45,35 @@ async function uploadImage(formData: FormData) {
         return redirect('/error?msg=Invalid form data');
     }
 
-     ///////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////
+    // VALIDATE THE FILE MIME TYPE /////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////
+
+    //TODO
+
+    ////////////////////////////////////////////////////////////////////////
+    // VALIDATE THE FILE SIZE //////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////
+
+    //TODO
+
+    ///////////////////////////////////////////////////////////////////////
     // Upload the image to Supabase storage ///////////////////////////////
     ///////////////////////////////////////////////////////////////////////
+
+    // Which bucket to use
+    const bucketName = `${publicImage ? 'PUBLIC' : 'PRIVATE'}-IMAGES`
 
     const imageUUID = uuid();
 
     const { data: storageData, error: storageError } = await supabase.storage
-        .from("images")
+        .from(bucketName)
         .upload(
             imageUUID!, // Same id as the one in the db!
             imageFile, // The actual image
-            {   
+            {
                 // Some metadata
-                metadata: { 
+                metadata: {
                     user_id: user.id,
                     public: publicImage,
                 },
@@ -72,9 +85,8 @@ async function uploadImage(formData: FormData) {
         return redirect('/error?msg=Error uploading image');
     }
 
-    const imageUrl = supabase.storage.from("images").getPublicUrl(storageData.path).data.publicUrl;
-
-    console.log("Metadata: ", await supabase.storage.from("images").info(storageData.path))
+    // Only get the public url if the image is public.
+    const imageUrl = publicImage ? supabase.storage.from(bucketName).getPublicUrl(storageData.path).data.publicUrl : null;
 
     ///////////////////////////////////////////////////////////////////////
     // Use a transaction for creating the image on the db /////////////////
@@ -103,7 +115,7 @@ async function uploadImage(formData: FormData) {
 
         // Rollback: Delete the image from storage if the DB transaction fails
         const { error: deleteError } = await supabase.storage
-            .from("images")
+            .from(bucketName)
             .remove([storageData.path]);
 
         if (deleteError) {
@@ -112,12 +124,14 @@ async function uploadImage(formData: FormData) {
 
         return redirect('/error?msg=Error saving image');
     }
-   
-    console.log("New image url: ", imageUrl)
 
     // Select path to revalidate and redirect to.
     const pathToRedirectTo = `/dashboard/${publicImage ? 'public' : 'private'}`;
+
+    // Refresh data on the target path
     revalidatePath(pathToRedirectTo);
+
+    // Redirect to path
     redirect(pathToRedirectTo);
 }
 
