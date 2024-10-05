@@ -42,13 +42,31 @@ export const useInfinityQueryFunctions = <T extends { id: number | string }>({
         [fetchNextPage, hasNextPage, isFetching, isLoading]
     );
 
+    // Map between recipeId to pageIndex + indexInPage (will be faster when deleting)
+    const itemIdToIndexesMap: Map<
+        string,
+        { pageIndex: number; indexInPage: number }
+    > = useMemo(() => {
+
+        const map = new Map();
+
+        data?.pages.forEach((page, pageIndex) => {
+            page.forEach((item, indexInPage) => {
+                map.set(item.id, { pageIndex, indexInPage });
+            });
+        });
+
+        return map;
+    }, [data?.pages?.map(page => page.length).join('-')]);
+
     const flatData = useMemo(() => {
         return data?.pages.flat();
-    }, [data?.pages?.map(page => page.length).join('-')]);
+    }, [data?.pages?.map((item) => JSON.stringify(item))]);
 
     return {
         flatData,
-        lastElementRef
+        lastElementRef,
+        itemIdToIndexesMap
     }
 
 }

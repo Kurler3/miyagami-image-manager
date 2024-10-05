@@ -6,7 +6,7 @@ import { z } from "zod";
 import { v4 as uuid } from 'uuid';
 import prisma from "../prisma/prisma";
 import { revalidatePath } from "next/cache";
-
+import { Favorite, Image } from "@prisma/client";
 
 // Form validation schema
 const imageSchema = z.object({
@@ -44,7 +44,7 @@ export async function uploadImage(formData: FormData) {
     ////////////////////////////////////////////////////////////////////////
 
     const allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-    
+
     if (!allowedMimeTypes.includes(imageFile.type)) {
         console.error('Error: Invalid file type');
         throw new Error(`Invalid file type. Valid types: ${allowedMimeTypes.join(', ')}`)
@@ -151,7 +151,9 @@ export async function uploadImage(formData: FormData) {
  * @returns List of public images
  */
 
-export async function getPublicImages(page: number, limit=15) {
+export async function getPublicImages(page: number, limit = 15) {
+
+    const user = await getCurrentUser();
 
     const images = await prisma.image.findMany({
         where: { public: true },
@@ -159,8 +161,99 @@ export async function getPublicImages(page: number, limit=15) {
         take: limit,
         orderBy: {
             createdAt: 'desc', // The most recent ones first.
+        },
+        include: !user ? undefined : {
+            Favorite: {
+                where: {
+                    userId: user.id // Only include favorites for the current user
+                },
+                select: {
+                    id: true // Select only the ID to check if this image is favorited
+                }
+            }
         }
     });
-    
-    return images;
+
+    // Map through images to attach favorited status
+    const imagesWithFavoriteStatus = images.map((image: Image) => ({
+        ...image,
+        isFavorited: (image as Image & { Favorite: Favorite[] }).Favorite?.length > 0 // Check if there are any favorites for the current user
+    }));
+
+    return imagesWithFavoriteStatus;
+}
+
+
+/**
+ * Favorites or Unfavorites an image.
+ * @param imageId 
+ * @returns Void
+ */
+export async function favoriteOrUnfavoriteImage(
+    imageId: string,
+) {
+
+    // Make sure user is logged, if not => redirect to /login
+    const user = await getCurrentUser();
+
+    if (!user) {
+        return redirect('/login');
+    }
+
+    // Get image
+    const image = await prisma.image.findUnique({
+        where: {
+            id: imageId,
+        },
+        // select: {
+        //     userId: true,
+        //     public: true,
+        // },
+        include: {
+            Favorite: {
+                where: {
+                    userId: user.id // Only include favorites for the current user
+                },
+                select: {
+                    id: true // Select only the ID to check if this image is favorited
+                }
+            }
+        }
+    })
+
+    if (!image) {
+        throw new Error('This image doesn\'t exist anymore. Please refresh your page');
+    }
+
+    // If private => check if the current user is the owner
+    if (!image.public && user.id !== image.userId) {
+        throw new Error('You don\'t have access to this image');
+    }
+
+    // If already favorited => delete favorite
+    if(image.Favorite.length > 0) {
+
+        // Delete
+        await prisma.favorite.delete({
+            where: {
+                id: image.Favorite[0].id,
+            }
+        });
+
+    // If not, favorite it.
+    } else {
+
+        // Create it
+        await prisma.favorite.create({
+            data: {
+                userId: user.id,
+                imageId,
+            }
+        });
+    }
+
+    // It has only favorited now (the most recent version) if previously it wasn't.
+    const hasFavoritedNow = image.Favorite.length === 0
+
+    return hasFavoritedNow;
 }
