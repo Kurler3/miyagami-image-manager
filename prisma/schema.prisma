@@ -20,6 +20,7 @@ model Image {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
   imageUrl   String? // No image url in case that the image is private, in which case we just create a signed url on the fly.
+  imagePath  String // Path to the image in storage.
   public     Boolean  @default(false)
   userId     String
 

@@ -49,13 +49,23 @@ async function uploadImage(formData: FormData) {
     // VALIDATE THE FILE MIME TYPE /////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////
 
-    //TODO
+    const allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    
+    if (!allowedMimeTypes.includes(imageFile.type)) {
+        console.error('Error: Invalid file type');
+        return redirect(`/error?msg=Invalid file type. Valid types: ${allowedMimeTypes.join(', ')}`);
+    }
 
     ////////////////////////////////////////////////////////////////////////
     // VALIDATE THE FILE SIZE //////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////
 
-    //TODO
+    const maxSizeInBytes = 50 * 1024 * 1024; // 50 MB max size
+
+    if (imageFile.size > maxSizeInBytes) {
+        console.error('Error: File is too large');
+        return redirect('/error?msg=File is too large. Max size is 50MB');
+    }
 
     ///////////////////////////////////////////////////////////////////////
     // Upload the image to Supabase storage ///////////////////////////////
@@ -66,10 +76,13 @@ async function uploadImage(formData: FormData) {
 
     const imageUUID = uuid();
 
+    // Build the path of the image in storage (will be in the folder of the user uuid if private).
+    const imagePath = publicImage ? imageUUID : `${user.id}/${imageUUID}`
+
     const { data: storageData, error: storageError } = await supabase.storage
         .from(bucketName)
         .upload(
-            imageUUID!, // Same id as the one in the db!
+            imagePath, // Same id as the one in the db!
             imageFile, // The actual image
             {
                 // Some metadata
@@ -105,6 +118,7 @@ async function uploadImage(formData: FormData) {
                     public: publicImage,
                     imageUrl: imageUrl,
                     userId: user.id,
+                    imagePath: imagePath,
                 },
             });
 
