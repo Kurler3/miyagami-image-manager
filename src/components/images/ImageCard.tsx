@@ -1,29 +1,32 @@
 'use client'
 
-import { Image as ImageType } from "@prisma/client";
+import { Image as IImage } from "@prisma/client";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card"
 import Image from "next/image";
 import { Button } from "../ui/button";
 import { Lock, Star, Unlock } from "lucide-react";
 import moment from 'moment';
 import useFavoriteOrUnfavoriteImage from "../../utils/hooks/useFavoriteOrUnfavoriteImage.hook";
+import { IImageType } from "../../utils/types";
 
 type ImageCardProps = {
-    image: ImageType; // The entire image object
+    image: IImage; // The entire image object
     isFavorited: boolean; // Boolean to check if the image is favorited
     isOwner: boolean;
+    imagesType: IImageType;
 };
 
 const ImageCard: React.FC<ImageCardProps> = ({
     image,
     isFavorited,
     isOwner,
+    imagesType,
 }) => {
 
     const {
         isFavoritingOrUnfavoritingImage,
         favoriteOrUnfavoriteImage
-    } = useFavoriteOrUnfavoriteImage();
+    } = useFavoriteOrUnfavoriteImage(imagesType,);
 
     return (
         <Card className="shadow-lg transition-transform duration-200">

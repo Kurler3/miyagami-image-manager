@@ -1,9 +1,10 @@
 'use client';
 
 import { User } from "@supabase/supabase-js";
-import useGetPublicImages from "../../utils/hooks/useGetPublicImages.hook";
 import { Card, CardContent } from "../ui/card";
 import ImageCard from "./ImageCard";
+import { IImageType } from "../../utils/types";
+import useGetImages from "../../utils/hooks/useGetImages.hook";
 
 const SkeletonLoader = () => (
     <Card className="shadow-lg animate-pulse border-none">
@@ -16,11 +17,15 @@ const SkeletonLoader = () => (
 
 type IProps = {
     user: User | null;
+    imagesType: IImageType
 }
 
 export default function ImagesList({
-    user
+    user,
+    imagesType,
 }: IProps) {
+
+
 
     const {
         lastElementRef,
@@ -28,7 +33,7 @@ export default function ImagesList({
         isFetchingNextPage,
         hasNextPage,
         isLoadingPublicImages, // Extract isLoading from your hook
-    } = useGetPublicImages();
+    } = useGetImages(imagesType);
 
     return (
         <div className="container mx-auto px-4 w-full h-full max-h-full overflow-y-auto p-4">
@@ -51,6 +56,7 @@ export default function ImagesList({
                                 image={image}
                                 isFavorited={image.isFavorited}
                                 isOwner={user?.id === image.userId}
+                                imagesType={imagesType}
                             />
                         ))}
 

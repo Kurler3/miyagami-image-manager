@@ -10,6 +10,7 @@ export default async function DashboardPublicImagesPage() {
             <h1 className="text-lg font-bold">Dashboard Public Images</h1>
             <ImagesList 
                 user={user}
+                imagesType="public"
             />
         </div>
     )

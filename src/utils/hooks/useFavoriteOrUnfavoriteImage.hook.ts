@@ -1,13 +1,16 @@
 import { useMutation } from "@tanstack/react-query";
 import { favoriteOrUnfavoriteImage } from "../serverActions/image.actions";
 import toast from "react-hot-toast";
-import useGetPublicImages from "./useGetPublicImages.hook";
+import { IImageType } from "../types";
+import useGetImages from "./useGetImages.hook";
 
-const useFavoriteOrUnfavoriteImage = () => {
+const useFavoriteOrUnfavoriteImage = (
+    imagesType: IImageType,
+) => {
 
     const {
         updateImage,
-    } = useGetPublicImages();
+    } = useGetImages(imagesType);
 
     const {
         // data,
@@ -23,7 +26,8 @@ const useFavoriteOrUnfavoriteImage = () => {
                 hasFavoritedNow,
             }
         },
-        onError: () => {
+        onError: (error) => {
+            console.log(error);
             // Show toast
             toast.error('Error favoriting image. Please try again');
         },
