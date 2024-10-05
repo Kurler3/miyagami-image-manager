@@ -8,6 +8,7 @@ import { Lock, Star, Unlock } from "lucide-react";
 import moment from 'moment';
 import useFavoriteOrUnfavoriteImage from "../../utils/hooks/useFavoriteOrUnfavoriteImage.hook";
 import { IImageType } from "../../utils/types";
+import useSwitchImageVisibility from "../../utils/hooks/useSwitchImageVisibility.hook";
 
 type ImageCardProps = {
     image: IImage; // The entire image object
@@ -27,6 +28,11 @@ const ImageCard: React.FC<ImageCardProps> = ({
         isFavoritingOrUnfavoritingImage,
         favoriteOrUnfavoriteImage
     } = useFavoriteOrUnfavoriteImage(imagesType,);
+
+    const {
+        switchImageVisibility,
+        isSwitchingVisibilityOfImage
+    } = useSwitchImageVisibility(imagesType);
 
     return (
         <Card className="shadow-lg transition-transform duration-200">
@@ -67,17 +73,35 @@ const ImageCard: React.FC<ImageCardProps> = ({
                             ) : (
                                 <Star
                                     className={`mr-1 hover:text-yellow-400 ${isFavorited ? 'text-yellow-400' : 'text-gray-500'
-                                    }`}
+                                        }`}
                                 />
                             )
                         }
 
                     </Button>
-                    {image.public ? (
-                        <Unlock className="text-green-600" />
-                    ) : (
-                        <Lock className="text-red-600" />
-                    )}
+
+                    <Button
+                        variant='ghost'
+                        className={`hover:bg-transparent ${isOwner && 'cursor-pointer hover:bg-gray-600'}`}
+                        onClick={() => {
+
+                            if(isOwner && !isSwitchingVisibilityOfImage) {
+                                switchImageVisibility({ imageId: image.id })
+                            }
+
+                        }}
+                    >   
+                        {
+                            isSwitchingVisibilityOfImage ? (
+                                <span className="loading loading-spinner"></span>
+                            ) : image.public ? (
+                                <Unlock className="text-green-600" />
+                            ) : (
+                                <Lock className="text-red-600" />
+                            )
+                        }
+                    </Button>
+
                 </div>
             </CardContent>
         </Card>

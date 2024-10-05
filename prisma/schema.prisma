@@ -24,7 +24,7 @@ model Image {
   public     Boolean  @default(false)
   userId     String
 
-  User       User     @relation(fields: [userId], references: [id])
+  User       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   Favorite   Favorite[]
 
   @@map("images")
@@ -36,8 +36,8 @@ model Favorite {
   userId    String
   imageId   String
 
-  User      User     @relation(fields: [userId], references: [id])
-  Image     Image    @relation(fields: [imageId], references: [id])
+  User      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Image     Image    @relation(fields: [imageId], references: [id], onDelete: Cascade)
 
    @@map("favorites")
 }

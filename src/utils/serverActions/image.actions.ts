@@ -7,6 +7,8 @@ import { v4 as uuid } from 'uuid';
 import prisma from "../prisma/prisma";
 import { revalidatePath } from "next/cache";
 import { Favorite, Image } from "@prisma/client";
+import { PRIVATE_IMAGES_BUCKET_NAME, PUBLIC_IMAGES_BUCKET_NAME } from "../constants/supabase.constants";
+import { IImageWithFavorited } from "../types";
 
 // Form validation schema
 const imageSchema = z.object({
@@ -183,6 +185,81 @@ export async function getPublicImages(page: number, limit = 15) {
     return imagesWithFavoriteStatus;
 }
 
+// Get private images
+export async function getPrivateImages(page: number, limit = 15) {
+
+    const user = await getCurrentUser();
+
+    if (!user) {
+        return redirect('/login');
+    }
+
+    let images = await prisma.image.findMany({
+        where: { public: false },
+        skip: page * limit,
+        take: limit,
+        orderBy: {
+            createdAt: 'desc', // The most recent ones first.
+        },
+        include: {
+            Favorite: {
+                where: {
+                    userId: user.id // Only include favorites for the current user
+                },
+                select: {
+                    id: true // Select only the ID to check if this image is favorited
+                }
+            }
+        }
+    });
+
+    console.log(images)
+
+    const imagePaths = images.map((img) => img.imagePath);
+
+    console.log(imagePaths)
+
+    if (imagePaths.length > 0) {
+
+        const supabase = createClient();
+
+        const { data, error } = await supabase
+            .storage
+            .from(PRIVATE_IMAGES_BUCKET_NAME)
+            .createSignedUrls(imagePaths, 60 * 5); // Expires in 5 mins
+
+        if (error) {
+            console.error('Error while getting the signed urls', error);
+            throw new Error('Error getting signed urls');
+        }
+
+        // For each item in data => assign the imageUrl to the correct img
+        data?.forEach(({ signedUrl }, index) => {
+
+            images[index] = {
+                ...images[index],
+                imageUrl: signedUrl,
+            }
+
+        });
+
+    }
+
+    // Inject a signed url for each of the images.
+    images = images.map((image) => {
+        const isFavorited = (image as Image & { Favorite: Favorite[] }).Favorite?.length > 0;
+        return {
+            ...image,
+            isFavorited,
+        }
+    })
+
+
+
+    return images as unknown as IImageWithFavorited[];
+}
+
+//TODO Get favorite images
 
 /**
  * Favorites or Unfavorites an image.
@@ -231,7 +308,7 @@ export async function favoriteOrUnfavoriteImage(
     }
 
     // If already favorited => delete favorite
-    if(image.Favorite.length > 0) {
+    if (image.Favorite.length > 0) {
 
         // Delete
         await prisma.favorite.delete({
@@ -240,7 +317,7 @@ export async function favoriteOrUnfavoriteImage(
             }
         });
 
-    // If not, favorite it.
+        // If not, favorite it.
     } else {
 
         // Create it
@@ -256,4 +333,172 @@ export async function favoriteOrUnfavoriteImage(
     const hasFavoritedNow = image.Favorite.length === 0
 
     return hasFavoritedNow;
+}
+
+
+/**
+ * Switches from public to private or private to public.
+ * @param imageId 
+ */
+export async function switchImageVisibility(imageId: string) {
+
+    // Get current user
+    const user = await getCurrentUser();
+
+    // If not logged in => error
+    if (!user) {
+        console.error('Trying to change visibility of image without being logged in');
+        throw new Error('Need to login boi');
+    }
+
+    // Get image
+    const img = await prisma.image.findUnique({
+        where: {
+            id: imageId,
+        },
+        select: {
+            public: true,
+            userId: true,
+            imageUrl: true,
+            imagePath: true,
+        }
+    });
+
+    if (!img) {
+        throw new Error('This image doesn\'t exist');
+    }
+
+    // Check if user owns the image
+    if (img.userId !== user.id) {
+        throw new Error('You don\'t own this image')
+    }
+
+    const supabase = createClient();
+
+    // Init the new image object
+    const newImageObject: Partial<Image> = { public: !img.public };
+
+    // If switching to private => need to remove the imageUrl and all the favorites expect the owner.
+    if (!newImageObject.public) {
+
+        newImageObject.imageUrl = null;
+
+        // Add the user in the image path!
+        newImageObject.imagePath = `${user.id}/${img.imagePath}`
+
+        // Download the image from the public bucket
+        const { data: fileBlob, error: downloadError } = await supabase
+            .storage
+            .from(PUBLIC_IMAGES_BUCKET_NAME)
+            .download(img.imagePath);
+
+        if (downloadError || !fileBlob) throw new Error('Failed to download the image from public bucket');
+
+        // Upload the image to the private bucket
+        const { error: uploadError } = await supabase
+            .storage
+            .from(PRIVATE_IMAGES_BUCKET_NAME)
+            .upload(
+                newImageObject.imagePath, 
+                fileBlob,
+                {
+                    metadata: {
+                        user_id: user.id,
+                        public: false,
+                    }
+                }
+            );
+
+        if (uploadError) throw new Error('Failed to upload the image to private bucket');
+
+        // Delete the image from the public bucket
+        const { error: deleteFromPublicError } = await supabase
+            .storage
+            .from(PUBLIC_IMAGES_BUCKET_NAME)
+            .remove([img.imagePath]);
+
+        if (deleteFromPublicError) throw new Error('Failed to delete the image from public bucket');
+
+        // If not private anymore, remove the userId from the path and add the public url
+    } else {
+
+        // Updat the image path to only have the id
+        newImageObject.imagePath = img.imagePath?.split('/')[1];
+
+        // Download the image from the private bucket
+        const { data: fileBlob, error: downloadError } = await supabase
+            .storage
+            .from(PRIVATE_IMAGES_BUCKET_NAME)
+            .download(img.imagePath);
+
+        if (downloadError || !fileBlob) throw new Error('Failed to download the image from private bucket');
+
+        // Upload the image to the public bucket
+        const { error: uploadError } = await supabase
+            .storage
+            .from(PUBLIC_IMAGES_BUCKET_NAME)
+            .upload(
+                newImageObject.imagePath!, 
+                fileBlob,
+                {
+                    metadata: {
+                        user_id: user.id,
+                        public: true,
+                    }
+                }
+            );
+
+        if (uploadError) {
+            console.error(uploadError)
+            throw new Error('Failed to upload the image to public bucket');
+        }
+
+        // Delete the image from the private bucket
+        const { error: deleteFromPrivateError } = await supabase
+            .storage
+            .from(PRIVATE_IMAGES_BUCKET_NAME)
+            .remove([img.imagePath]);
+
+        if (deleteFromPrivateError) throw new Error('Failed to delete the image from private bucket');
+
+        // Generate the public URL for the image
+        const { data: publicUrlData } = supabase
+            .storage
+            .from(PUBLIC_IMAGES_BUCKET_NAME) // Generate public URL for the new public image path
+            .getPublicUrl(newImageObject.imagePath!);
+
+        newImageObject.imageUrl = publicUrlData.publicUrl; // Assign the new public URL
+    }
+
+    await prisma.$transaction(async (prisma) => {
+
+        // Switch the public key
+        await prisma.image.update({
+            where: {
+                id: imageId
+            },
+            data: newImageObject
+        });
+
+        if (!newImageObject.public) {
+
+            // Delete all favorites expect the one of the owner.
+            await prisma.favorite.deleteMany({
+                where: {
+                    imageId,
+                    userId: {
+                        not: user.id,
+                    }
+                },
+            });
+
+        }
+
+    });
+
+    // Return updated image.
+    return {
+        id: imageId,
+        public: !img.public,
+    }
 }

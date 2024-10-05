@@ -11,7 +11,7 @@
 // (stops favoriting and this list is for the favorites, need to remove it from cache, for example)
 
 import { InfiniteData, useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
-import { getPublicImages } from "../serverActions/image.actions";
+import { getPrivateImages, getPublicImages } from "../serverActions/image.actions";
 import { IImageType, IImageWithFavorited } from "../types";
 import { useInfinityQueryFunctions } from "./useInfinityQueryFunctions.hook";
 import _ from "lodash";
@@ -47,6 +47,9 @@ const useGetImages = (
             switch (type) {
                 case 'public':
                     images = await getPublicImages(pageParam);
+                    break;
+                case 'private': 
+                    images = await getPrivateImages(pageParam);
                     break;
                 default:
                     throw new Error('This type is not supported');
