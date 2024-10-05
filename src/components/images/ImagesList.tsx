@@ -6,10 +6,10 @@ import { Card, CardContent } from "../ui/card";
 import ImageCard from "./ImageCard";
 
 const SkeletonLoader = () => (
-    <Card className="shadow-lg animate-pulse">
-        <CardContent className="flex items-center justify-center h-48 bg-gray-200">
+    <Card className="shadow-lg animate-pulse border-none">
+        <CardContent className="flex items-center justify-center h-96 ">
             {/* Placeholder for skeleton loading */}
-            <div className="w-full h-full bg-gray-300 rounded"></div>
+            <div className="w-full skeleton h-full "></div>
         </CardContent>
     </Card>
 );
