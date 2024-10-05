@@ -1,3 +1,5 @@
+'use client'
+
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -5,13 +7,27 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { uploadImage } from "@/utils/serverActions/image.actions";
+import { useState } from "react";
+import toast from "react-hot-toast";
 
+export default function UploadImagePage() {
 
-export default async function UploadImagePage() {
-
+    const [loading, setLoading] = useState(false); // Loading state
+ 
+    // Handle form submission with loading state
     async function handleSubmit(formData: FormData) {
-        'use server'
-        await uploadImage(formData);
+        setLoading(true);
+        try {
+            // This is your server action to upload the image
+            await uploadImage(formData); // Call the server action
+
+            toast.success('Image uploaded successfully!')
+        } catch (error) {
+            toast.error((error as Error).message);
+        } finally {
+            setLoading(false); // Set loading to false after submission
+        }
+
     }
 
     return (
@@ -27,6 +43,11 @@ export default async function UploadImagePage() {
                     <form
                         className="space-y-4"
                         encType="multipart/form-data"
+                        onSubmit={async (e) => {
+                            e.preventDefault();
+                            const formData = new FormData(e.currentTarget);
+                            await handleSubmit(formData);
+                        }}
                     >
                         {/* Title */}
                         <div className="space-y-2">
@@ -59,8 +80,13 @@ export default async function UploadImagePage() {
                         <Separator className="my-4" />
 
                         {/* Submit Button */}
-                        <Button className="w-full bg-green-600 text-white hover:bg-green-700" formAction={handleSubmit} type="submit">
-                            Upload Image
+                        <Button 
+                            className="w-full bg-green-600 text-white hover:bg-green-700" 
+                            type="submit"
+                            disabled={loading} // Disable button while loading
+                        >
+                            {loading && <span className="loading loading-spinner mr-2"></span>}
+                            {loading ? 'Uploading...' : 'Upload Image'}
                         </Button>
                     </form>
                 </CardContent>

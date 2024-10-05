@@ -8,9 +8,6 @@ import prisma from "../prisma/prisma";
 import { revalidatePath } from "next/cache";
 
 
-
-
-
 // Form validation schema
 const imageSchema = z.object({
     title: z.string().min(1, "Title is required"),
@@ -39,7 +36,7 @@ export async function uploadImage(formData: FormData) {
 
     if (!parsedData.success) {
         console.error('Error with form data: ', parsedData)
-        return redirect('/error?msg=Invalid form data');
+        throw new Error('Invalid form data');
     }
 
     ////////////////////////////////////////////////////////////////////////
@@ -50,7 +47,7 @@ export async function uploadImage(formData: FormData) {
     
     if (!allowedMimeTypes.includes(imageFile.type)) {
         console.error('Error: Invalid file type');
-        return redirect(`/error?msg=Invalid file type. Valid types: ${allowedMimeTypes.join(', ')}`);
+        throw new Error(`Invalid file type. Valid types: ${allowedMimeTypes.join(', ')}`)
     }
 
     ////////////////////////////////////////////////////////////////////////
@@ -61,7 +58,7 @@ export async function uploadImage(formData: FormData) {
 
     if (imageFile.size > maxSizeInBytes) {
         console.error('Error: File is too large');
-        return redirect('/error?msg=File is too large. Max size is 50MB');
+        throw new Error('File is too large. Max size is 50MB')
     }
 
     ///////////////////////////////////////////////////////////////////////
@@ -92,7 +89,7 @@ export async function uploadImage(formData: FormData) {
 
     if (storageError) {
         console.error('Uploading img error: ', storageError);
-        return redirect('/error?msg=Error uploading image');
+        throw new Error('Error uploading image')
     }
 
     // Only get the public url if the image is public.
@@ -133,7 +130,7 @@ export async function uploadImage(formData: FormData) {
             console.error('Error deleting image from storage during rollback: ', deleteError);
         }
 
-        return redirect('/error?msg=Error saving image');
+        throw new Error("Error saving image")
     }
 
     // Select path to revalidate and redirect to.
@@ -144,4 +141,26 @@ export async function uploadImage(formData: FormData) {
 
     // Redirect to path
     redirect(pathToRedirectTo);
+}
+
+
+/**
+ * 
+ * @param page 
+ * @param limit 
+ * @returns List of public images
+ */
+
+export async function getPublicImages(page: number, limit=15) {
+
+    const images = await prisma.image.findMany({
+        where: { public: true },
+        skip: page * limit,
+        take: limit,
+        orderBy: {
+            createdAt: 'desc', // The most recent ones first.
+        }
+    });
+    
+    return images;
 }
