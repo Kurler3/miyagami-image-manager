@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "../supabase/server"
+import { BASE_URL } from "../constants/envVars.constants";
 // import { BASE_URL } from "../constants/envVars.constants";
 
 
@@ -12,7 +13,7 @@ export async function loginWithGoogle() {
     const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-            redirectTo: `/auth/google/callback`,
+            redirectTo: `${BASE_URL}/auth/google/callback`,
         },
     })
 
