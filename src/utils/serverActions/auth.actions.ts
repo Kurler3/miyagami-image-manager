@@ -25,7 +25,7 @@ export async function loginWithGoogle() {
 
     // If there's a callback url from the sign in
     if (data.url) {
-        return redirect(data.url) // use the redirect API for your server framework
+        return redirect(data.url)
     }
 
 }

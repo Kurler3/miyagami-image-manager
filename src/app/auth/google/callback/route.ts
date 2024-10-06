@@ -60,8 +60,8 @@ export async function GET(request: Request) {
     // Redirect based on environment
     const redirectUrl = isLocalEnv
         ? `http://localhost:3000${next}`
-        : forwardedHost
-            ? `https://${forwardedHost}${next}`
+        // : forwardedHost
+        //     ? `https://${forwardedHost}${next}`
             : `https://${request.headers.get('host') ?? process.env.PROD_URL}${next}`;
 
     return NextResponse.redirect(redirectUrl);
