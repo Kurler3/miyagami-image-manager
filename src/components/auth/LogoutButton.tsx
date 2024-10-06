@@ -2,7 +2,6 @@ import { signout } from "../../utils/serverActions/auth.actions";
 import { Button } from "../ui/button";
 
 
-
 export default function LogoutButton() {
     return (
         <form className="w-full">
