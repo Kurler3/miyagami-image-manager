@@ -53,14 +53,16 @@ export async function GET(request: Request) {
 
     // Handle environment: use x-forwarded-host for production
     const forwardedHost = request.headers.get('x-forwarded-host');
-    const isLocalEnv = process.env.VERCEL_ENV === 'development';
+    const isLocalEnv = !process.env.PROD_URL // process.env.VERCEL_ENV === 'development';
+
+    console.log('is local env: ', isLocalEnv)
 
     // Redirect based on environment
     const redirectUrl = isLocalEnv
         ? `http://localhost:3000${next}`
         : forwardedHost
             ? `https://${forwardedHost}${next}`
-            : `https://${request.headers.get('host')}${next}`;
+            : `https://${request.headers.get('host') ?? process.env.PROD_URL}${next}`;
 
     return NextResponse.redirect(redirectUrl);
 }
