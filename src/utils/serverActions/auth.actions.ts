@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "../supabase/server"
-import { BASE_URL } from "../constants/envVars.constants";
+// import { BASE_URL } from "../constants/envVars.constants";
 
 
 export async function loginWithGoogle() {
