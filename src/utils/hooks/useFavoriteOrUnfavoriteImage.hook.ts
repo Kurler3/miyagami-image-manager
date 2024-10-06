@@ -35,10 +35,11 @@ const useFavoriteOrUnfavoriteImage = (
             imageId,
             hasFavoritedNow
         }) => {
+            toast.success(`Image ${hasFavoritedNow ? 'favorited' : 'unfavorited'} successfully`)
             updateImage({
                 id: imageId,
                 isFavorited: hasFavoritedNow
-            })
+            });
         }
     });
 

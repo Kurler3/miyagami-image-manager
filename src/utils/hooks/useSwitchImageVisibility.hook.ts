@@ -5,9 +5,6 @@ import { switchImageVisibility } from "../serverActions/image.actions";
 import toast from "react-hot-toast";
 
 
-
-
-
 const useSwitchImageVisibility = (type: IImageType) => {
 
     const {
@@ -30,6 +27,7 @@ const useSwitchImageVisibility = (type: IImageType) => {
             toast.error('Error switing the visibility of the image. Please try again');
         },
         onSuccess: (updatedImage) => {
+            toast.success(`Image visibility switched successfully`)
             updateImage(updatedImage);
         }
     });
