@@ -109,7 +109,7 @@ const useGetImages = (
                 // If the type is favorite and stopped favoriting it => remove it instead.
                 if (type === 'favorite' && imageToUpdate.isFavorited === false) shouldRemove = true;
                 // If in private page and switched the image to public => remove it
-                if (type === 'private' && imageToUpdate.public === false) shouldRemove = true;
+                if (type === 'private' && imageToUpdate.public === true) shouldRemove = true;
                 // If in public page and switched the image to private => remove it.
                 if (type === 'public' && imageToUpdate.public === false) shouldRemove = true;
 

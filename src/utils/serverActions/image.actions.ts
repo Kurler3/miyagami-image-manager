@@ -72,8 +72,8 @@ export async function uploadImage(formData: FormData) {
 
     const imageUUID = uuid();
 
-    // Build the path of the image in storage (will be in the folder of the user uuid if private).
-    const imagePath = publicImage ? imageUUID : `${user.id}/${imageUUID}`
+    // Build the path of the image in storage.
+    const imagePath = `${user.id}/${imageUUID}`
 
     const { data: storageData, error: storageError } = await supabase.storage
         .from(bucketName)
@@ -383,9 +383,6 @@ export async function switchImageVisibility(imageId: string) {
 
         newImageObject.imageUrl = null;
 
-        // Add the user in the image path!
-        newImageObject.imagePath = `${user.id}/${img.imagePath}`
-
         // Download the image from the public bucket
         const { data: fileBlob, error: downloadError } = await supabase
             .storage
@@ -399,7 +396,7 @@ export async function switchImageVisibility(imageId: string) {
             .storage
             .from(PRIVATE_IMAGES_BUCKET_NAME)
             .upload(
-                newImageObject.imagePath, 
+                img.imagePath, 
                 fileBlob,
                 {
                     metadata: {
@@ -422,9 +419,6 @@ export async function switchImageVisibility(imageId: string) {
         // If not private anymore, remove the userId from the path and add the public url
     } else {
 
-        // Updat the image path to only have the id
-        newImageObject.imagePath = img.imagePath?.split('/')[1];
-
         // Download the image from the private bucket
         const { data: fileBlob, error: downloadError } = await supabase
             .storage
@@ -438,7 +432,7 @@ export async function switchImageVisibility(imageId: string) {
             .storage
             .from(PUBLIC_IMAGES_BUCKET_NAME)
             .upload(
-                newImageObject.imagePath!, 
+                img.imagePath, 
                 fileBlob,
                 {
                     metadata: {
@@ -465,7 +459,7 @@ export async function switchImageVisibility(imageId: string) {
         const { data: publicUrlData } = supabase
             .storage
             .from(PUBLIC_IMAGES_BUCKET_NAME) // Generate public URL for the new public image path
-            .getPublicUrl(newImageObject.imagePath!);
+            .getPublicUrl(img.imagePath);
 
         newImageObject.imageUrl = publicUrlData.publicUrl; // Assign the new public URL
     }
