@@ -52,7 +52,7 @@ export async function GET(request: Request) {
     }
 
     // Handle environment: use x-forwarded-host for production
-    const forwardedHost = request.headers.get('x-forwarded-host');
+    // const forwardedHost = request.headers.get('x-forwarded-host');
     const isLocalEnv = !process.env.PROD_URL // process.env.VERCEL_ENV === 'development';
 
     console.log('is local env: ', isLocalEnv)
