@@ -213,11 +213,7 @@ export async function getPrivateImages(page: number, limit = 15) {
         }
     });
 
-    console.log(images)
-
     const imagePaths = images.map((img) => img.imagePath);
-
-    console.log(imagePaths)
 
     if (imagePaths.length > 0) {
 
@@ -254,12 +250,81 @@ export async function getPrivateImages(page: number, limit = 15) {
         }
     })
 
-
-
     return images as unknown as IImageWithFavorited[];
 }
 
-//TODO Get favorite images
+// Get favorite images
+export async function getFavoriteImages(page: number, limit = 15) {
+
+    const supabase = createClient();
+
+    // Get user
+    const user = await getCurrentUser();
+
+    // Check if is logged in, if not => /login
+    if (!user) {
+        return redirect('/login');
+    }
+
+    // Get images, filtering by favorited by the current user.
+    let images = await prisma.image.findMany({
+        where: {
+            Favorite: {
+                some: {
+                    userId: user.id
+                }
+            }
+        },
+        skip: page * limit,
+        take: limit,
+        orderBy: {
+            createdAt: 'desc', // The most recent ones first.
+        },
+    })
+
+    // Filter images that are private and not owned by this user (can't see them!)
+    images = images.filter((img) => {
+        if (!img.public && img.userId !== user.id) return false;
+        return true;
+    })
+
+    // For each private image, get a signed url and attach it to the object.
+    // Append isFavorited as true to each image before returning
+    // (can do this because the data we get is already the one favorited by the current user, so this field is always true in this case)
+
+    images = (await Promise.all(
+        images.map(async (img) => {
+            
+            if (!img.public) {
+
+                const { data, error } = await supabase
+                    .storage
+                    .from(PRIVATE_IMAGES_BUCKET_NAME)
+                    .createSignedUrl(img.imagePath, 60 * 5);
+
+                if(error) {
+                    console.error(`Error while getting signed url for image: ${img.imagePath}: ${error}`);
+                    return null;
+                }
+
+                return {
+                    ...img,
+                    isFavorited: true,
+                    imageUrl: data.signedUrl,
+                }
+            }
+
+            return {
+                ...img,
+                isFavorited: true,
+            };
+
+        })
+    )).filter((img) => !!img);
+
+    // Return all the images
+    return images as unknown as IImageWithFavorited[];;
+}
 
 /**
  * Favorites or Unfavorites an image.
@@ -396,7 +461,7 @@ export async function switchImageVisibility(imageId: string) {
             .storage
             .from(PRIVATE_IMAGES_BUCKET_NAME)
             .upload(
-                img.imagePath, 
+                img.imagePath,
                 fileBlob,
                 {
                     metadata: {
@@ -432,7 +497,7 @@ export async function switchImageVisibility(imageId: string) {
             .storage
             .from(PUBLIC_IMAGES_BUCKET_NAME)
             .upload(
-                img.imagePath, 
+                img.imagePath,
                 fileBlob,
                 {
                     metadata: {

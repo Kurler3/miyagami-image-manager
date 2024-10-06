@@ -1,9 +1,18 @@
+import ImagesList from "../../../components/images/ImagesList";
+import { getCurrentUser } from "../../../utils/supabase/server";
 
 
-export default function DashboardFavoriteImagesPage() {
+export default async function DashboardFavoriteImagesPage() {
+
+    const user = await getCurrentUser();
+
     return (
-        <div>
-            <h1>Dashboard Favorite Images</h1>
+        <div className="w-full h-screen flex justify-start items-center gap-4 p-4 flex-col">
+            <h1 className="text-lg font-bold">Dashboard Favorite Images</h1>
+            <ImagesList
+                user={user}
+                imagesType="favorite"
+            />
         </div>
     )
 }
